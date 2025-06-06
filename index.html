@@ -1,0 +1,785 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Solar Plant Monitor & Evaluation</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f0f4f8; /* Light background */
+            color: #334155; /* Dark grey text */
+        }
+        h1, h2, h3 {
+            color: #1e293b; /* Darker blue-grey for headings */
+            text-align: center;
+            margin-bottom: 25px;
+        }
+        section {
+            background-color: #ffffff;
+            padding: 25px;
+            margin-bottom: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        table {
+            width: 100%;
+            border-collapse: separate; /* Use separate for rounded corners on cells */
+            border-spacing: 0;
+            margin-top: 20px;
+            border-radius: 12px; /* Rounded corners for the table */
+            overflow: hidden; /* Ensures content within rounds */
+        }
+        th, td {
+            border: 1px solid #e2e8f0; /* Light border color */
+            padding: 12px;
+            text-align: left;
+        }
+        th {
+            background-color: #e2e8f0; /* Light grey header */
+            font-weight: bold;
+            color: #1e293b;
+            position: sticky;
+            top: 0; /* Makes header sticky for scrolling */
+            z-index: 1; /* Ensures header stays above content */
+        }
+        /* Rounded corners for table headers */
+        th:first-child { border-top-left-radius: 12px; }
+        th:last-child { border-top-right-radius: 12px; }
+        /* Adjusted for full table rounded corners */
+        table:last-of-type tr:last-child td:first-child { border-bottom-left-radius: 12px; }
+        table:last-of-type tr:last-child td:last-child { border-bottom-right-radius: 12px; }
+
+
+        input[type="text"], input[type="number"], select, textarea {
+            width: 100%;
+            box-sizing: border-box;
+            border: 1px solid #cbd5e1; /* Subtle border for inputs */
+            border-radius: 6px; /* Rounded corners for inputs */
+            padding: 8px;
+            font-family: 'Inter', sans-serif;
+            color: #334155;
+            background-color: #f8fafc; /* Very light background for inputs */
+        }
+        textarea {
+            min-height: 50px; /* More height for notes */
+            resize: vertical;
+        }
+        .device-details, .instructions {
+            background-color: #e0f7fa; /* Light blue background */
+            border-left: 6px solid #00bcd4; /* Teal border */
+            padding: 20px;
+            margin-bottom: 25px;
+            border-radius: 10px; /* Rounded corners for info boxes */
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+        }
+        .device-details ul {
+            list-style-type: none; /* No bullet points */
+            padding: 0;
+            margin: 10px 0 0 0;
+        }
+        .device-details li {
+            margin-bottom: 8px;
+            font-size: 1.05em;
+        }
+        .solar-saved {
+            font-size: 1.2em;
+            font-weight: bold;
+            color: #22c55e; /* Green color for solar saved */
+            margin-top: 15px;
+            text-align: center;
+            padding: 10px;
+            background-color: #dcfce7; /* Light green background */
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+        }
+
+        /* Performance Evaluation Specific Styles */
+        .performance-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+        }
+        .metric-input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .metric-result {
+            padding: 10px;
+            border-radius: 6px;
+            font-weight: bold;
+            text-align: center;
+            margin-top: 5px; /* Space between input and result */
+            min-height: 40px; /* Ensure consistent height */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .good-result { background-color: #dcfce7; color: #16a34a; }
+        .average-result { background-color: #fffbeb; color: #d97706; }
+        .bad-result { background-color: #fee2e2; color: #dc2626; }
+        .unknown-result { background-color: #e2e8f0; color: #475569; } /* Gray for initial/unknown */
+
+        /* Table colors for guidelines */
+        .good { background-color: #dcfce7; color: #16a34a; font-weight: 600;}
+        .average { background-color: #fffbeb; color: #d97706; font-weight: 600;}
+        .bad { background-color: #fee2e2; color: #dc2626; font-weight: 600;}
+
+        /* Responsive adjustments for tables */
+        @media (max-width: 768px) {
+            table, thead, tbody, th, td, tr {
+                display: block;
+            }
+            thead tr {
+                position: absolute;
+                top: -9999px;
+                left: -9999px;
+            }
+            tr {
+                border: 1px solid #e2e8f0;
+                margin-bottom: 15px;
+                border-radius: 12px;
+                overflow: hidden;
+            }
+            td {
+                border: none;
+                border-bottom: 1px solid #e2e8f0;
+                position: relative;
+                padding-left: 50%;
+                text-align: right;
+            }
+            td:before {
+                content: attr(data-label);
+                position: absolute;
+                left: 0;
+                width: 45%;
+                padding-left: 10px;
+                font-weight: bold;
+                text-align: left;
+                color: #475569;
+            }
+            td:last-child {
+                border-bottom: none;
+            }
+            input[type="text"], input[type="number"], select, textarea {
+                text-align: right; /* Align input text to the right in mobile */
+            }
+            .performance-grid {
+                grid-template-columns: 1fr; /* Single column on small screens */
+            }
+        }
+        /* Styling for the historical data display */
+        .historical-data-item {
+            background-color: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+        }
+        .historical-data-item strong {
+            color: #1e293b;
+        }
+        .historical-data-item p {
+            margin-bottom: 5px;
+            font-size: 0.9em;
+            color: #475569;
+        }
+        .historical-data-item .evaluation-summary {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 1px dashed #e2e8f0;
+        }
+        .historical-data-item .evaluation-summary span {
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-size: 0.8em;
+            font-weight: 600;
+        }
+        .loading-indicator {
+            text-align: center;
+            padding: 20px;
+            font-size: 1.1em;
+            color: #64748b;
+        }
+        .user-id-display {
+            text-align: center;
+            font-size: 0.9em;
+            color: #64748b;
+            margin-bottom: 20px;
+        }
+        footer {
+            text-align: center;
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid #e2e8f0;
+            font-size: 0.9em;
+            color: #64748b;
+        }
+    </style>
+</head>
+<body>
+
+    <h1 class="text-4xl font-bold text-center mb-10">Solar Plant Performance Dashboard</h1>
+
+    <section>
+        <h2 class="text-2xl font-semibold mb-6 text-center">Live Performance Snapshot & Evaluation</h2>
+        <p class="text-center text-sm text-gray-600 mb-6">Enter your current inverter readings below and click "Evaluate" to see a live performance assessment.</p>
+
+        <div class="performance-grid">
+            <div class="metric-input-group">
+                <label for="liveDate" class="text-sm font-medium text-gray-700">Date</label>
+                <input type="text" id="liveDate" value="" placeholder="DD-MM-YYYY">
+            </div>
+            <div class="metric-input-group">
+                <label for="liveTime" class="text-sm font-medium text-gray-700">Time</label>
+                <input type="text" id="liveTime" value="" placeholder="HH:MM AM/PM">
+            </div>
+            <div class="metric-input-group">
+                <label for="liveInverterStatus" class="text-sm font-medium text-gray-700">Inverter Status</label>
+                <select id="liveInverterStatus">
+                    <option value="">Select</option>
+                    <option value="On">On</option>
+                    <option value="Off">Off</option>
+                </select>
+                <div id="resultInverterStatus" class="metric-result unknown-result"></div>
+            </div>
+            <div class="metric-input-group">
+                <label for="liveBatteryVolt" class="text-sm font-medium text-gray-700">Battery Voltage (V)</label>
+                <input type="number" step="0.1" id="liveBatteryVolt" placeholder="e.g., 27.6">
+                <div id="resultBatteryVolt" class="metric-result unknown-result"></div>
+            </div>
+            <div class="metric-input-group">
+                <label for="liveMainsStatus" class="text-sm font-medium text-gray-700">Mains Status</label>
+                <select id="liveMainsStatus">
+                    <option value="">Select</option>
+                    <option value="On">On</option>
+                    <option value="Off">Off</option>
+                </select>
+                <div id="resultMainsStatus" class="metric-result unknown-result"></div>
+            </div>
+            <div class="metric-input-group">
+                <label for="liveOutputVolt" class="text-sm font-medium text-gray-700">Output Voltage (V)</label>
+                <input type="number" step="0.1" id="liveOutputVolt" placeholder="e.g., 216.0">
+                <div id="resultOutputVolt" class="metric-result unknown-result"></div>
+            </div>
+            <div class="metric-input-group">
+                <label for="liveUPSMode" class="text-sm font-medium text-gray-700">UPS Mode</label>
+                <select id="liveUPSMode">
+                    <option value="">Select</option>
+                    <option value="On">On</option>
+                    <option value="Off">Off</option>
+                </select>
+                <div id="resultUPSMode" class="metric-result unknown-result"></div>
+            </div>
+            <div class="metric-input-group">
+                <label for="liveLoadPercent" class="text-sm font-medium text-gray-700">Load (%)</label>
+                <input type="number" step="0.1" id="liveLoadPercent" placeholder="e.g., 14.0">
+                <div id="resultLoadPercent" class="metric-result unknown-result"></div>
+            </div>
+            <div class="metric-input-group">
+                <label for="liveLoadCurrent" class="text-sm font-medium text-gray-700">Load Current (A) (*Likely Solar Input*)</label>
+                <input type="number" step="0.1" id="liveLoadCurrent" placeholder="e.g., 12.0">
+                <div id="resultLoadCurrent" class="metric-result unknown-result"></div>
+            </div>
+            <div class="metric-input-group">
+                <label for="liveSolarStatus" class="text-sm font-medium text-gray-700">Solar Status</label>
+                <select id="liveSolarStatus">
+                    <option value="">Select</option>
+                    <option value="On">On</option>
+                    <option value="Off">Off</option>
+                </select>
+                <div id="resultSolarStatus" class="metric-result unknown-result"></div>
+            </div>
+            <div class="metric-input-group">
+                <label for="liveBatteryStatus" class="text-sm font-medium text-gray-700">Battery Status</label>
+                <select id="liveBatteryStatus">
+                    <option value="">Select</option>
+                    <option value="Charging">Charging</option>
+                    <option value="Charged">Charged</option>
+                    <option value="Discharging">Discharging</option>
+                </select>
+                <div id="resultBatteryStatus" class="metric-result unknown-result"></div>
+            </div>
+            <div class="metric-input-group">
+                <label for="liveBatteryCurrent" class="text-sm font-medium text-gray-700">Battery Current (A)</label>
+                <input type="number" step="0.1" id="liveBatteryCurrent" placeholder="e.g., 2.1">
+                <div id="resultBatteryCurrent" class="metric-result unknown-result"></div>
+            </div>
+            <div class="metric-input-group">
+                <label for="totalSolarPowerGenerated" class="text-sm font-medium text-gray-700">Total Solar Power Generated (KWh)</label>
+                <input type="number" step="0.1" id="totalSolarPowerGenerated" placeholder="e.g., 2596.4">
+                <div id="resultTotalSolarPowerGenerated" class="metric-result unknown-result"></div>
+            </div>
+        </div>
+        <button id="evaluateBtn" class="mt-8 mx-auto block px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg shadow-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all">
+            Evaluate Performance
+        </button>
+        <button id="saveToDbBtn" class="mt-4 mx-auto block px-6 py-3 bg-green-600 text-white font-semibold rounded-lg shadow-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-all">
+            Save to Database
+        </button>
+        <p id="saveStatus" class="text-center mt-2 text-sm text-gray-600"></p>
+        <p id="userIdDisplay" class="user-id-display mt-4"></p>
+    </section>
+
+    <hr class="my-10 border-gray-300">
+
+    <section>
+        <h2 class="text-2xl font-semibold mb-4 text-center">Historical Data from Database</h2>
+        <p class="text-center text-sm text-gray-600 mb-6">Your past performance logs will appear here, retrieved from the database.</p>
+        <div id="historicalDataLoader" class="mt-4">
+            </div>
+    </section>
+
+    <hr class="my-10 border-gray-300">
+
+    <section>
+        <h2 class="text-2xl font-semibold mb-6 text-center">Performance Evaluation Guidelines</h2>
+        <p class="text-center text-sm text-gray-600 mb-6">Refer to these guidelines to understand what constitutes Good, Average, and Bad performance for your solar plant metrics.</p>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Metric</th>
+                    <th>Good Performance</th>
+                    <th>Average Performance</th>
+                    <th>Bad Performance</th>
+                    <th>Notes for SANSARA (24V System)</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td data-label="Metric">Inverter Status</td>
+                    <td data-label="Good Performance" class="good">"On" consistently when needed.</td>
+                    <td data-label="Average Performance" class="average">Occasional unexpected shutdowns.</td>
+                    <td data-label="Bad Performance" class="bad">Frequent unexpected shutdowns or failures to turn on.</td>
+                    <td data-label="Notes">Should always be "On" when solar is expected to be generating or load is present.</td>
+                </tr>
+                <tr>
+                    <td data-label="Metric">Battery Voltage (V)</td>
+                    <td data-label="Good Performance" class="good">$27.0V - 28.5V$ (Daytime, Charged)</td>
+                    <td data-label="Average Performance" class="average">$26.0V - 26.9V$ (Daytime, could be better) or occasional drops below $24.0V$.</td>
+                    <td data-label="Bad Performance" class="bad">Consistently below $24.0V$ or wild fluctuations.</td>
+                    <td data-label="Notes">For a 24V system (2 x 12V batteries), optimal charging is crucial for battery longevity.</td>
+                </tr>
+                <tr>
+                    <td data-label="Metric">Mains Status</td>
+                    <td data-label="Good Performance" class="good">"Off" during most daylight hours.</td>
+                    <td data-label="Average Performance" class="average">Switches "On" occasionally due to clouds or moderate loads.</td>
+                    <td data-label="Bad Performance" class="bad">Frequently "On" even on sunny days; high reliance on grid.</td>
+                    <td data-label="Notes">Indicates system running on solar/battery, maximizing savings.</td>
+                </tr>
+                <tr>
+                    <td data-label="Metric">Output Voltage (V)</td>
+                    <td data-label="Good Performance" class="good">$210V - 240V$ (stable).</td>
+                    <td data-label="Average Performance" class="average">Occasional slight fluctuations outside range.</td>
+                    <td data-label="Bad Performance" class="bad">Large, frequent fluctuations or consistently outside $200V - 250V$.</td>
+                    <td data-label="Notes">Ensures stable power for your home appliances.</td>
+                </tr>
+                <tr>
+                    <td data-label="Metric">UPS Mode</td>
+                    <td data-label="Good Performance" class="good">"Off" (inverter actively converting solar/battery power).</td>
+                    <td data-label="Average Performance" class="average">Rarely "On" for short periods without clear reason.</td>
+                    <td data-label="Bad Performance" class="bad">Unexpectedly "On" frequently, indicating bypass of solar/battery.</td>
+                    <td data-label="Notes">For Livguard, "Off" generally means active solar/battery utilization.</td>
+                </tr>
+                <tr>
+                    <td data-label="Metric">Load (%)</td>
+                    <td data-label="Good Performance" class="good">Below $70\%$ for most common usage, handles peaks up to $90\%$ well.</td>
+                    <td data-label="Average Performance" class="average">Frequently $70\%-90\%$, leading to higher battery drain or grid reliance.</td>
+                    <td data-label="Bad Performance" class="bad">Consistently over $90\%$ or causing overload trips.</td>
+                    <td data-label="Notes">2250VA inverter can handle approx. 1800W continuous load. Higher loads mean higher power draw.</td>
+                </tr>
+                <tr>
+                    <td data-label="Metric">Load Current (A) <br>(*Likely Solar Input*)</td>
+                    <td data-label="Good Performance" class="good">Significant positive current during sunny hours (e.g., $>5A-10A$ average depending on sun/load).</td>
+                    <td data-label="Average Performance" class="average">Lower than expected current for sunny conditions.</td>
+                    <td data-label="Bad Performance" class="bad">Very low or zero current when solar panels should be generating.</td>
+                    <td data-label="Notes">Crucial indicator of how much power your solar panels are producing. For 1600W panels (4x400W), you expect good current.</td>
+                </tr>
+                <tr>
+                    <td data-label="Metric">Solar Status</td>
+                    <td data-label="Good Performance" class="good">"On" during all daylight hours.</td>
+                    <td data-label="Average Performance" class="average">"On" but inconsistent or frequently turns "Off" briefly.</td>
+                    <td data-label="Bad Performance" class="bad">Frequently "Off" during sunny periods.</td>
+                    <td data-label="Notes">Directly confirms solar panel operation.</td>
+                </tr>
+                <tr>
+                    <td data-label="Metric">Battery Status</td>
+                    <td data-label="Good Performance" class="good">"Charged" by afternoon/evening.</td>
+                    <td data-label="Average Performance" class="average">"Charging" often, but rarely reaches "Charged" state.</td>
+                    <td data-label="Bad Performance" class="bad">Consistently "Discharging" when solar is available or never "Charging."</td>
+                    <td data-label="Notes">Reflects how well solar generation is managing battery health and overall energy storage.</td>
+                </tr>
+                <tr>
+                    <td data-label="Metric">Battery Current (A)</td>
+                    <td data-label="Good Performance" class="good">High positive current (e.g., $10A-40A$) when charging. Low positive current (e.g., $1A-5A$) when "Charged" (float charge).</td>
+                    <td data-label="Average Performance" class="average">Charging current is lower than expected or inconsistent.</td>
+                    <td data-label="Bad Performance" class="bad">Consistently negative current (discharge) when solar is abundant and battery not fully charged.</td>
+                    <td data-label="Notes">For 200Ah battery, expect higher currents during bulk charge phase. $2.1A$ is a good float charge.</td>
+                </tr>
+                <tr>
+                    <td data-label="Metric">Total Solar Generated</td>
+                    <td data-label="Good Performance" class="good">Consistent increase over time, aligns with expectations for location/weather.</td>
+                    <td data-label="Average Performance" class="average">Slower increase, lower than expected, or inconsistent logging.</td>
+                    <td data-label="Bad Performance" class="bad">Stagnant or decreasing value (unless deliberate reset), major discrepancies.</td>
+                    <td data-label="Notes">Reflects the cumulative energy produced.</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div class="note">
+            <h3>Important Note on "Load Current (A)":</h3>
+            <p>As discussed, the "Load 12.0A" reading on your Livguard inverter is *most likely* the **DC current coming from your solar panels and feeding into the inverter**, rather than the AC output current to your home appliances. This is a common display behavior for hybrid/off-grid inverters. A high positive value here during sunny hours is a good sign of strong solar generation from your 1600W panels.</p>
+        </div>
+    </section>
+
+    <footer class="mt-10 pt-5 border-t border-gray-300 text-center text-gray-600 text-sm">
+        Prepared by Praveen K
+    </footer>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, addDoc, onSnapshot, query, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // Global Firebase variables
+        let app;
+        let db;
+        let auth;
+        let userId = 'anonymous'; // Default to anonymous
+
+        // Function to initialize Firebase and set up listeners
+        async function initializeFirebaseAndApp() {
+            const today = new Date();
+            const day = String(today.getDate()).padStart(2, '0');
+            const month = String(today.getMonth() + 1).padStart(2, '0');
+            const year = today.getFullYear();
+            const hours = today.getHours();
+            const minutes = String(today.getMinutes()).padStart(2, '0');
+            const ampm = hours >= 12 ? 'PM' : 'AM';
+            const formattedHours = hours % 12 || 12;
+
+            const liveDateElement = document.getElementById('liveDate');
+            const liveTimeElement = document.getElementById('liveTime');
+            if (liveDateElement) liveDateElement.value = `${day}-${month}-${year}`;
+            if (liveTimeElement) liveTimeElement.value = `${formattedHours}:${minutes} ${ampm}`;
+
+            const userIdDisplayElement = document.getElementById('userIdDisplay');
+            const historicalDataLoaderElement = document.getElementById('historicalDataLoader');
+            const evaluateBtnElement = document.getElementById('evaluateBtn');
+            const saveToDbBtnElement = document.getElementById('saveToDbBtn');
+
+            let firebaseConfig = {}; // Default empty object
+
+            // --- Firebase Configuration Handling ---
+            // This section handles how Firebase gets its configuration.
+            // In the Canvas environment, `__firebase_config` is automatically provided.
+            // If running in a standard browser outside Canvas, `__firebase_config` will be undefined.
+            // In that case, you MUST replace the placeholder values below with your actual Firebase project configuration.
+            // You can find your Firebase project config in your Firebase project settings (Project settings -> General -> Your apps -> Firebase SDK snippet -> Config).
+            if (typeof __firebase_config !== 'undefined' && __firebase_config) {
+                try {
+                    firebaseConfig = JSON.parse(__firebase_config);
+                    console.log("Firebase config loaded from Canvas environment.");
+                } catch (e) {
+                    console.error("Error parsing __firebase_config from Canvas:", e);
+                    if (historicalDataLoaderElement) {
+                        historicalDataLoaderElement.innerHTML = '<p class="loading-indicator bad-result">Error parsing Firebase config from Canvas. Check console.</p>';
+                    }
+                    return; // Stop initialization if config is bad
+                }
+            } else {
+                console.warn("Running outside Canvas environment. Firebase config (__firebase_config) is not automatically available.");
+                console.warn("For full database functionality, you MUST replace the placeholder values below with your actual Firebase project configuration (apiKey, authDomain, projectId, etc.).");
+                if (historicalDataLoaderElement) {
+                    historicalDataLoaderElement.innerHTML = '<p class="loading-indicator average-result">Firebase not fully configured. Data operations may not work. See console for instructions.</p>';
+                }
+                // Placeholder Firebase configuration for testing outside Canvas.
+                // REPLACE THESE VALUES WITH YOUR ACTUAL FIREBASE PROJECT CONFIG!
+                // PASTE YOUR FIREBASE PROJECT CONFIG HERE
+                firebaseConfig = {
+                    apiKey: "AIzaSyC4qeNUrsm4qAiUOvZuxeEyetVk_wt5RmI",
+                    authDomain: "sansara-plant.firebaseapp.com",
+                    projectId: "sansara-plant",
+                    storageBucket: "sansara-plant.firebasestorage.app",
+                    messagingSenderId: "742018097126",
+                    appId: "1:742018097126:web:2f4674d59e8a82a1ae4027",
+                    measurementId: "G-MLCMF3CY0Q"
+                };
+            }
+
+            // --- Firebase App Initialization ---
+            try {
+                app = initializeApp(firebaseConfig);
+                db = getFirestore(app);
+                auth = getAuth(app);
+
+                // --- Authentication Handling ---
+                // This ensures a user is signed in, either via custom token (Canvas) or anonymously (browser default).
+                onAuthStateChanged(auth, async (user) => {
+                    if (user) {
+                        userId = user.uid;
+                        if (userIdDisplayElement) userIdDisplayElement.textContent = `User ID: ${userId}`;
+                        loadHistoricalData(userId, historicalDataLoaderElement);
+                    } else {
+                        // If no user is logged in (e.g., initial load or after sign-out)
+                        // Attempt to sign in with custom token if available (from Canvas)
+                        if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                            try {
+                                await signInWithCustomToken(auth, __initial_auth_token);
+                                userId = auth.currentUser?.uid || crypto.randomUUID(); // Update userId after successful sign-in
+                                if (userIdDisplayElement) userIdDisplayElement.textContent = `User ID: ${userId}`;
+                                loadHistoricalData(userId, historicalDataLoaderElement);
+                            } catch (error) {
+                                console.error("Error signing in with custom token. Falling back to anonymous login:", error);
+                                // Fallback to anonymous if custom token fails
+                                await signInAnonymously(auth);
+                                userId = auth.currentUser?.uid || crypto.randomUUID();
+                                if (userIdDisplayElement) userIdDisplayElement.textContent = `User ID: ${userId} (Anonymous)`;
+                                loadHistoricalData(userId, historicalDataLoaderElement);
+                            }
+                        } else {
+                            // If no custom token (typical in standalone browser), sign in anonymously
+                            try {
+                                await signInAnonymously(auth);
+                                userId = auth.currentUser?.uid || crypto.randomUUID();
+                                if (userIdDisplayElement) userIdDisplayElement.textContent = `User ID: ${userId} (Anonymous)`;
+                                loadHistoricalData(userId, historicalDataLoaderElement);
+                            } catch (anonError) {
+                                console.error("Error signing in anonymously:", anonError);
+                                if (userIdDisplayElement) userIdDisplayElement.textContent = `User ID: Not Signed In`;
+                                if (historicalDataLoaderElement) historicalDataLoaderElement.innerHTML = '<p class="loading-indicator bad-result">Authentication failed. Data cannot be loaded/saved without Firebase setup.</p>';
+                            }
+                        }
+                    }
+                    // Attach event listeners ONLY AFTER Firebase and authentication are ready
+                    if (evaluateBtnElement) evaluateBtnElement.addEventListener('click', evaluatePerformance);
+                    if (saveToDbBtnElement) saveToDbBtnElement.addEventListener('click', savePerformance);
+                });
+
+            } catch (error) {
+                console.error("Critical Firebase initialization error:", error);
+                if (historicalDataLoaderElement) {
+                    historicalDataLoaderElement.innerHTML = '<p class="loading-indicator bad-result">Critical error initializing Firebase. Check console for details. Make sure your Firebase project config is correct if running outside Canvas.</p>';
+                }
+            }
+        }
+
+        // Call the initialization function when the DOM is ready
+        document.addEventListener('DOMContentLoaded', initializeFirebaseAndApp);
+
+        function setResult(elementId, status, message) {
+            const resultElement = document.getElementById(elementId);
+            if (resultElement) {
+                resultElement.textContent = message;
+                resultElement.className = 'metric-result';
+                if (status === 'Good') {
+                    resultElement.classList.add('good-result');
+                } else if (status === 'Average') {
+                    resultElement.classList.add('average-result');
+                } else if (status === 'Bad') {
+                    resultElement.classList.add('bad-result');
+                } else {
+                    resultElement.classList.add('unknown-result');
+                    resultElement.textContent = 'N/A';
+                }
+                resultElement.dataset.evaluationStatus = status;
+            } else {
+                console.warn(`Result element with ID ${elementId} not found.`);
+            }
+        }
+
+        function evaluatePerformance() {
+            console.log("Evaluate Performance button clicked!");
+            const inverterStatus = document.getElementById('liveInverterStatus').value;
+            const batteryVolt = parseFloat(document.getElementById('liveBatteryVolt').value);
+            const mainsStatus = document.getElementById('liveMainsStatus').value;
+            const outputVolt = parseFloat(document.getElementById('liveOutputVolt').value);
+            const upsMode = document.getElementById('liveUPSMode').value;
+            const loadPercent = parseFloat(document.getElementById('liveLoadPercent').value);
+            const loadCurrent = parseFloat(document.getElementById('liveLoadCurrent').value);
+            const solarStatus = document.getElementById('liveSolarStatus').value;
+            const batteryStatus = document.getElementById('liveBatteryStatus').value;
+            const batteryCurrent = parseFloat(document.getElementById('liveBatteryCurrent').value);
+            // Get Total Solar Power Generated
+            const totalSolarPowerGenerated = parseFloat(document.getElementById('totalSolarPowerGenerated').value);
+
+            if (inverterStatus === 'On') { setResult('resultInverterStatus', 'Good', 'Good'); } else if (inverterStatus === 'Off') { setResult('resultInverterStatus', 'Bad', 'Bad (Unexpectedly Off)'); } else { setResult('resultInverterStatus', 'Unknown', 'N/A'); }
+            if (!isNaN(batteryVolt)) { if (batteryVolt >= 27.0 && batteryVolt <= 28.5) { setResult('resultBatteryVolt', 'Good', 'Good'); } else if ((batteryVolt >= 26.0 && batteryVolt < 27.0) || (batteryVolt > 28.5 && batteryVolt <= 29.0)) { setResult('resultBatteryVolt', 'Average', 'Average'); } else { setResult('resultBatteryVolt', 'Bad', 'Bad'); } } else { setResult('resultBatteryVolt', 'Unknown', 'N/A'); }
+            if (mainsStatus === 'Off') { setResult('resultMainsStatus', 'Good', 'Good'); } else if (mainsStatus === 'On') { setResult('resultMainsStatus', 'Bad', 'Bad (On Grid)'); } else { setResult('resultMainsStatus', 'Unknown', 'N/A'); }
+            if (!isNaN(outputVolt)) { if (outputVolt >= 210.0 && outputVolt <= 240.0) { setResult('resultOutputVolt', 'Good', 'Good'); } else if ((outputVolt >= 200.0 && outputVolt < 210.0) || (outputVolt > 240.0 && outputVolt <= 250.0)) { setResult('resultOutputVolt', 'Average', 'Average'); } else { setResult('resultOutputVolt', 'Bad', 'Bad'); } } else { setResult('resultOutputVolt', 'Unknown', 'N/A'); }
+            if (upsMode === 'Off') { setResult('resultUPSMode', 'Good', 'Good'); } else if (upsMode === 'On') { setResult('resultUPSMode', 'Bad', 'Bad (Bypassing Solar/Battery)'); } else { setResult('resultUPSMode', 'Unknown', 'N/A'); }
+            if (!isNaN(loadPercent)) { if (loadPercent > 0 && loadPercent <= 70) { setResult('resultLoadPercent', 'Good', 'Good'); } else if (loadPercent > 70 && loadPercent <= 90) { setResult('resultLoadPercent', 'Average', 'Average'); } else if (loadPercent > 90) { setResult('resultLoadPercent', 'Bad', 'Bad (High Load)'); } else { setResult('resultLoadPercent', 'Good', 'Good (No Load)'); } } else { setResult('resultLoadPercent', 'Unknown', 'N/A'); }
+            if (!isNaN(loadCurrent)) { if (loadCurrent >= 5.0) { setResult('resultLoadCurrent', 'Good', 'Good'); } else if (loadCurrent >= 2.0 && loadCurrent < 5.0) { setResult('resultLoadCurrent', 'Average', 'Average'); } else { setResult('resultLoadCurrent', 'Bad', 'Bad'); } } else { setResult('resultLoadCurrent', 'Unknown', 'N/A'); }
+            if (solarStatus === 'On') { setResult('resultSolarStatus', 'Good', 'Good'); } else if (solarStatus === 'Off') { setResult('resultSolarStatus', 'Bad', 'Bad (Solar Off)'); } else { setResult('resultSolarStatus', 'Unknown', 'N/A'); }
+            if (batteryStatus === 'Charged') { setResult('resultBatteryStatus', 'Good', 'Good'); } else if (batteryStatus === 'Charging') { setResult('resultBatteryStatus', 'Average', 'Average'); } else if (batteryStatus === 'Discharging') { setResult('resultBatteryStatus', 'Bad', 'Bad'); } else { setResult('resultBatteryStatus', 'Unknown', 'N/A'); }
+            if (!isNaN(batteryCurrent)) { if (batteryStatus === 'Charged' && batteryCurrent >= 1.0 && batteryCurrent <= 5.0) { setResult('resultBatteryCurrent', 'Good', 'Good (Float)'); } else if (batteryStatus === 'Charging' && batteryCurrent > 5.0) { setResult('resultBatteryCurrent', 'Good', 'Good (Charging)'); } else if (batteryStatus === 'Charging' && batteryCurrent <= 5.0 && batteryCurrent > 0) { setResult('resultBatteryCurrent', 'Average', 'Average (Slow Charging)'); } else if (batteryCurrent < 0) { setResult('resultBatteryCurrent', 'Bad', 'Bad (Discharging)'); } else { setResult('resultBatteryCurrent', 'Bad', 'Bad'); } } else { setResult('resultBatteryCurrent', 'Unknown', 'N/A'); }
+            // Evaluate Total Solar Power Generated (simple check for now)
+            if (!isNaN(totalSolarPowerGenerated)) {
+                if (totalSolarPowerGenerated > 0) { // Assuming any positive value is "Good" for logging
+                    setResult('resultTotalSolarPowerGenerated', 'Good', 'Recorded');
+                } else {
+                    setResult('resultTotalSolarPowerGenerated', 'Average', 'No Generation');
+                }
+            } else {
+                setResult('resultTotalSolarPowerGenerated', 'Unknown', 'N/A');
+            }
+        }
+
+        async function savePerformance() {
+            console.log("Save to Database button clicked!");
+            if (!db || !auth.currentUser) {
+                console.error("Database not initialized or user not authenticated.");
+                document.getElementById('saveStatus').textContent = "Error: Database not ready or not logged in. Check console for Firebase setup instructions.";
+                return;
+            }
+
+            document.getElementById('saveToDbBtn').disabled = true;
+            document.getElementById('saveStatus').textContent = "Saving...";
+
+            try {
+                const liveData = {
+                    date: document.getElementById('liveDate').value,
+                    time: document.getElementById('liveTime').value,
+                    inverterStatus: document.getElementById('liveInverterStatus').value,
+                    batteryVolt: parseFloat(document.getElementById('liveBatteryVolt').value),
+                    mainsStatus: document.getElementById('liveMainsStatus').value,
+                    outputVolt: parseFloat(document.getElementById('liveOutputVolt').value),
+                    upsMode: document.getElementById('liveUPSMode').value,
+                    loadPercent: parseFloat(document.getElementById('liveLoadPercent').value),
+                    loadCurrent: parseFloat(document.getElementById('liveLoadCurrent').value),
+                    solarStatus: document.getElementById('liveSolarStatus').value,
+                    batteryStatus: document.getElementById('liveBatteryStatus').value,
+                    batteryCurrent: parseFloat(document.getElementById('liveBatteryCurrent').value),
+                    totalSolarPowerGenerated: parseFloat(document.getElementById('totalSolarPowerGenerated').value),
+                    timestamp: serverTimestamp()
+                };
+
+                const evaluationResults = {
+                    inverterStatus: document.getElementById('resultInverterStatus').dataset.evaluationStatus,
+                    batteryVolt: document.getElementById('resultBatteryVolt').dataset.evaluationStatus,
+                    mainsStatus: document.getElementById('resultMainsStatus').dataset.evaluationStatus,
+                    outputVolt: document.getElementById('resultOutputVolt').dataset.evaluationStatus,
+                    upsMode: document.getElementById('resultUPSMode').dataset.evaluationStatus,
+                    loadPercent: document.getElementById('resultLoadPercent').dataset.evaluationStatus,
+                    loadCurrent: document.getElementById('resultLoadCurrent').dataset.evaluationStatus,
+                    solarStatus: document.getElementById('resultSolarStatus').dataset.evaluationStatus,
+                    batteryStatus: document.getElementById('resultBatteryStatus').dataset.evaluationStatus,
+                    batteryCurrent: document.getElementById('resultBatteryCurrent').dataset.evaluationStatus,
+                    totalSolarPowerGenerated: document.getElementById('resultTotalSolarPowerGenerated').dataset.evaluationStatus,
+                };
+
+                const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+                const collectionRef = collection(db, `artifacts/${appId}/users/${userId}/performance_logs`);
+
+                await addDoc(collectionRef, {
+                    ...liveData,
+                    evaluationResults: evaluationResults
+                });
+
+                document.getElementById('saveStatus').textContent = "Data saved successfully!";
+                setTimeout(() => document.getElementById('saveStatus').textContent = "", 3000);
+            } catch (e) {
+                console.error("Error adding document: ", e);
+                document.getElementById('saveStatus').textContent = "Error saving data. See console for details.";
+            } finally {
+                document.getElementById('saveToDbBtn').disabled = false;
+            }
+        }
+
+        function loadHistoricalData(currentUserId, historicalDataLoaderElement) {
+            if (!historicalDataLoaderElement) {
+                console.error("Historical data loader element not found inside loadHistoricalData.");
+                return;
+            }
+            historicalDataLoaderElement.innerHTML = '<p class="loading-indicator">Loading historical data...</p>';
+
+            const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+            const collectionRef = collection(db, `artifacts/${appId}/users/${currentUserId}/performance_logs`);
+            const q = collectionRef;
+
+            onSnapshot(q, (snapshot) => {
+                historicalDataLoaderElement.innerHTML = ''; // Clear previous data
+                if (snapshot.empty) {
+                    historicalDataLoaderElement.innerHTML = '<p class="loading-indicator">No historical data found. Save some data!</p>';
+                    return;
+                }
+
+                const docs = [];
+                snapshot.forEach((doc) => {
+                    docs.push(doc.data());
+                });
+
+                docs.sort((a, b) => {
+                    const timeA = a.timestamp ? a.timestamp.toDate().getTime() : 0;
+                    const timeB = b.timestamp ? b.timestamp.toDate().getTime() : 0;
+                    return timeB - timeA; 
+                });
+
+                // Create the table structure
+                let tableHtml = `
+                    <table class="w-full text-sm">
+                        <thead>
+                            <tr>
+                                <th>Timestamp</th>
+                                <th>Inverter</th>
+                                <th>Battery Volt</th>
+                                <th>Mains</th>
+                                <th>Output Volt</th>
+                                <th>UPS Mode</th>
+                                <th>Load (%)</th>
+                                <th>Load Current (A)</th>
+                                <th>Solar</th>
+                                <th>Battery Status</th>
+                                <th>Battery Current (A)</th>
+                                <th>Total Solar Generated (KWh)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                `;
+
+                docs.forEach((data) => {
+                    const date = data.timestamp ? new Date(data.timestamp.toDate()).toLocaleString() : 'N/A';
+
+                    tableHtml += `
+                        <tr>
+                            <td data-label="Timestamp">${date}</td>
+                            <td data-label="Inverter" class="${data.evaluationResults?.inverterStatus?.toLowerCase()}-result">${data.inverterStatus} (${data.evaluationResults?.inverterStatus || 'N/A'})</td>
+                            <td data-label="Battery Volt" class="${data.evaluationResults?.batteryVolt?.toLowerCase()}-result">${data.batteryVolt !== undefined ? data.batteryVolt + 'V' : 'N/A'} (${data.evaluationResults?.batteryVolt || 'N/A'})</td>
+                            <td data-label="Mains" class="${data.evaluationResults?.mainsStatus?.toLowerCase()}-result">${data.mainsStatus} (${data.evaluationResults?.mainsStatus || 'N/A'})</td>
+                            <td data-label="Output Volt" class="${data.evaluationResults?.outputVolt?.toLowerCase()}-result">${data.outputVolt !== undefined ? data.outputVolt + 'V' : 'N/A'} (${data.evaluationResults?.outputVolt || 'N/A'})</td>
+                            <td data-label="UPS Mode" class="${data.evaluationResults?.upsMode?.toLowerCase()}-result">${data.upsMode} (${data.evaluationResults?.upsMode || 'N/A'})</td>
+                            <td data-label="Load (%)" class="${data.evaluationResults?.loadPercent?.toLowerCase()}-result">${data.loadPercent !== undefined ? data.loadPercent + '%' : 'N/A'} (${data.evaluationResults?.loadPercent || 'N/A'})</td>
+                            <td data-label="Load Current (A)" class="${data.evaluationResults?.loadCurrent?.toLowerCase()}-result">${data.loadCurrent !== undefined ? data.loadCurrent + 'A' : 'N/A'} (${data.evaluationResults?.loadCurrent || 'N/A'})</td>
+                            <td data-label="Solar" class="${data.evaluationResults?.solarStatus?.toLowerCase()}-result">${data.solarStatus} (${data.evaluationResults?.solarStatus || 'N/A'})</td>
+                            <td data-label="Battery Status" class="${data.evaluationResults?.batteryStatus?.toLowerCase()}-result">${data.batteryStatus} (${data.evaluationResults?.batteryStatus || 'N/A'})</td>
+                            <td data-label="Battery Current (A)" class="${data.evaluationResults?.batteryCurrent?.toLowerCase()}-result">${data.batteryCurrent !== undefined ? data.batteryCurrent + 'A' : 'N/A'} (${data.evaluationResults?.batteryCurrent || 'N/A'})</td>
+                            <td data-label="Total Solar Generated (KWh)" class="${data.evaluationResults?.totalSolarPowerGenerated?.toLowerCase()}-result">${data.totalSolarPowerGenerated !== undefined ? data.totalSolarPowerGenerated + ' KWh' : 'N/A'} (${data.evaluationResults?.totalSolarPowerGenerated || 'N/A'})</td>
+                        </tr>
+                    `;
+                });
+
+                tableHtml += `
+                        </tbody>
+                    </table>
+                `;
+                historicalDataLoaderElement.innerHTML = tableHtml;
+
+            }, (error) => {
+                console.error("Error fetching historical data:", error);
+                historicalDataLoaderElement.innerHTML = `<p class="loading-indicator bad-result">Error loading data: ${error.message}</p>`;
+            });
+        }
+    </script>
+
+</body>
+</html>
